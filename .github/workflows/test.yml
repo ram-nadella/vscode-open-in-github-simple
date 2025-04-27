@@ -26,11 +26,14 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    - name: Install xvfb
+      run: sudo apt-get install -y xvfb
+    
     - name: Run linting
       run: npm run lint
     
     - name: Run tests
-      run: npm test
+      run: xvfb-run --auto-servernum npm test
       
     # Uncomment if you want to upload build artifacts
     # - name: Upload extension VSIX
