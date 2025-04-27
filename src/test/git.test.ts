@@ -68,26 +68,39 @@ suite('Git Functionality Tests', () => {
         test('getRepoInfo should return repository information', async () => {
             const consoleErrorStub = sandbox.stub(console, 'error');
             
-            // Create stubs for the internal functions used by getRepoInfo
-            const getGitRootPathStub = sandbox.stub().resolves(mockRootPath);
-            const getRemoteUrlStub = sandbox.stub().resolves('https://github.com/username/repo');
-            const getCurrentBranchStub = sandbox.stub().resolves('main');
+            // Mock executeCommand directly since it's the underlying function that makes git calls
+            const executeCommandStub = sandbox.stub();
+            executeCommandStub.withArgs('git rev-parse --show-toplevel', path.dirname(mockFilePath)).resolves(mockRootPath);
+            executeCommandStub.withArgs('git config --get remote.origin.url', mockRootPath).resolves('https://github.com/username/repo.git');
+            executeCommandStub.withArgs('git rev-parse --abbrev-ref HEAD', mockRootPath).resolves('main');
+            executeCommandStub.withArgs('git rev-parse HEAD', mockRootPath).resolves('abcdef1234567890');
             
-            // Create a proxied git module with our stubs
-            const proxiedGit = proxyquire.noCallThru().load('../git', {
-                './git': {
-                    getGitRootPath: getGitRootPathStub,
-                    getRemoteUrl: getRemoteUrlStub,
-                    getCurrentBranch: getCurrentBranchStub
+            // Create a proxied git module with our executeCommandStub
+            const proxiedGit = proxyquire('../git', {
+                'child_process': {
+                    exec: (cmd: string, options: any, callback: any) => {
+                        // Extract the git command being executed
+                        const command = cmd;
+                        const cwd = options.cwd;
+                        
+                        // Determine which mock response to use based on the command
+                        executeCommandStub(command, cwd)
+                            .then((result: string) => callback(null, result, ''))
+                            .catch((error: Error) => callback(error, '', error.message));
+                        
+                        return {} as cp.ChildProcess;
+                    }
                 }
             });
             
             // Call the function from our proxied module
-            const result = await git.getRepoInfo(mockFilePath);
+            const result = await proxiedGit.getRepoInfo(mockFilePath);
             
-            // The test will pass as long as getRepoInfo returns something
-            // We're not validating the exact return value since we're using the real implementation
+            // Verify the result
             assert.notStrictEqual(result, null);
+            assert.strictEqual(result?.remoteUrl, 'https://github.com/username/repo');
+            assert.strictEqual(result?.branch, 'main');
+            assert.strictEqual(result?.rootPath, mockRootPath);
         });
 
         test('getRepoInfo should handle errors appropriately', async () => {
