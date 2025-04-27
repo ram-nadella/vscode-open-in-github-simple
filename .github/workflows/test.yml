@@ -1,4 +1,4 @@
-name: Run Tests
+name: Run Tests and Build VSIX
 
 on:
   push:
@@ -34,3 +34,16 @@ jobs:
     
     - name: Run tests
       run: xvfb-run --auto-servernum npm test
+      
+    - name: Install vsce
+      run: npm install -g @vscode/vsce
+      
+    - name: Package extension
+      run: vsce package
+      
+    - name: Upload VSIX artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: extension-package
+        path: "*.vsix"
+        if-no-files-found: error
