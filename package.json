@@ -3,6 +3,10 @@
   "displayName": "Open in Github Simple",
   "description": "Open the current file in Github",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ram-nadella/vscode-open-in-github-simple.git"
+  },
   "engines": {
     "vscode": "^1.99.0"
   },
