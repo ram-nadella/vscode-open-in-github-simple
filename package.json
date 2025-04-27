@@ -8,7 +8,8 @@
     "url": "https://github.com/ram-nadella/vscode-open-in-github-simple.git"
   },
   "engines": {
-    "vscode": "^1.99.0"
+    "vscode": "^1.99.0",
+    "node": "^22.0.0"
   },
   "categories": [
     "Other"
